@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ACHAL AI BROADCAST</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+    background:#080d1c;
+    color:white;
+    font-family:Arial;
+    text-align:center;
+    padding:20px;
+}
+h1 {color:#00d9ff;}
+.box {
+    background:#151e35;
+    padding:20px;
+    border-radius:15px;
+    margin:20px auto;
+    max-width:500px;
+}
+input,button {
+    padding:12px;
+    margin:8px;
+    border-radius:8px;
+    border:0;
+}
+button {
+    background:#00cfff;
+    font-weight:bold;
+}
+.message {
+    background:#202e4c;
+    padding:15px;
+    margin:10px;
+    border-radius:10px;
+    overflow-wrap:anywhere;
+}
+</style>
+</head>
+
+<body>
+
+<h1>ACHAL AI BROADCAST</h1>
+<p>Live Photo to Text Broadcasting System</p>
+
+<div class="box">
+<h2>Admin Login</h2>
+
+<input id="password" type="password"
+placeholder="Admin Password">
+
+<button onclick="login()">LOGIN</button>
+
+<div id="admin" hidden>
+<h2>Upload Photo</h2>
+
+<input type="file" id="photo" accept="image/*">
+
+<button onclick="sendPhoto()">EXTRACT & SEND</button>
+</div>
+
+<p id="status"></p>
+</div>
+
+<div class="box">
+<h2>Live Messages</h2>
+<div id="messages"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+const socket = io();
+
+async function login() {
+    const res = await fetch("/login", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            password:document.getElementById("password").value
+        })
+    });
+
+    const data = await res.json();
+
+    if(data.success) {
+        document.getElementById("admin").hidden = false;
+        document.getElementById("status").innerText = "Admin Logged In";
+    } else {
+        document.getElementById("status").innerText = "Wrong Password";
+    }
+}
+
+async function sendPhoto() {
+    const file = document.getElementById("photo").files[0];
+
+    if(!file) {
+        alert("Select a photo first");
+        return;
+    }
+
+    const form = new FormData();
+    form.append("photo",file);
+
+    const res = await fetch("/upload", {
+        method:"POST",
+        body:form
+    });
+
+    const data = await res.json();
+
+    document.getElementById("status").innerText =
+        data.success ? "Message Broadcasted!" : data.error;
+}
+
+socket.on("newMessage", function(text) {
+    const div = document.createElement("div");
+    div.className = "message";
+    div.textContent = text || "No text found";
+    document.getElementById("messages").prepend(div);
+});
+</script>
+
+</body>
+</html>
